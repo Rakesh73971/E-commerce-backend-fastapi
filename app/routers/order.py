@@ -1,6 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException,status
 from sqlalchemy.orm import Session
 from .. import database,models,schemas
+from ..oauth2 import get_current_user
 from typing import List
 
 router = APIRouter(
@@ -10,14 +11,14 @@ router = APIRouter(
 
 
 @router.get('/',response_model=List[schemas.OrderResponse],status_code=status.HTTP_200_OK)
-def get_orders(db:Session=Depends(database.get_db)):
+def get_orders(db:Session=Depends(database.get_db),current_user=Depends(get_current_user)):
     orders = db.query(models.Order).all()
     return orders
 
 
 
 @router.post('/',response_model=schemas.OrderResponse,status_code=status.HTTP_201_CREATED)
-def create_order(order:schemas.OrderBase,db:Session=Depends(database.get_db)):
+def create_order(order:schemas.OrderBase,db:Session=Depends(database.get_db),current_user=Depends(get_current_user)):
     order = models.Order(**order.dict())
     db.add(order)
     db.commit()
@@ -27,7 +28,7 @@ def create_order(order:schemas.OrderBase,db:Session=Depends(database.get_db)):
 
 
 @router.get('/{id}',response_model=schemas.OrderResponse,status_code=status.HTTP_200_OK)
-def get_order(id:int,db:Session=Depends(database.get_db)):
+def get_order(id:int,db:Session=Depends(database.get_db),current_user=Depends(get_current_user)):
     db_order = db.query(models.Order).filter(models.Order.id == id).first()
     if db_order is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"order with id {id} not found")
@@ -36,7 +37,7 @@ def get_order(id:int,db:Session=Depends(database.get_db)):
 
 
 @router.delete('/{id}',status_code=status.HTTP_204_NO_CONTENT)
-def delete_order(id:int,db:Session=Depends(database.get_db)):
+def delete_order(id:int,db:Session=Depends(database.get_db),current_user=Depends(get_current_user)):
     db_order = db.query(models.Order).filter(models.Order.filter == id).first()
     if db_order is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"order with id {id} not found")
@@ -46,7 +47,7 @@ def delete_order(id:int,db:Session=Depends(database.get_db)):
 
 
 @router.put('/{id}',response_model=schemas.OrderResponse)
-def update_order(id:int,order:schemas.OrderUpdate,db:Session=Depends(database.get_db)):
+def update_order(id:int,order:schemas.OrderUpdate,db:Session=Depends(database.get_db),current_user=Depends(get_current_user)):
     db_order = db.query(models.Order).filter(models.Order.id == id)
     db_existing = db_order.first()
     if db_existing is None:

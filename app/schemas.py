@@ -127,3 +127,6 @@ class CartItemResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TokenData(BaseModel):
+    id : Optional[int] = None
